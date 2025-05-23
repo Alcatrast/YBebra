@@ -40,6 +40,7 @@
     <None Include="sfml-system-2.dll" />
     <None Include="sfml-system-d-2.dll" />
     <None Include="sfml-window-2.dll" />
+    <None Include="test.py" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="scene.h">
