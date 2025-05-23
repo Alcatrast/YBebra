@@ -4,10 +4,10 @@
 #include <functional>
 
 class MouseObserver {
-public:
     std::atomic<bool> isRotating{ false };
     sf::Vector2i lastMousePos;
     sf::RenderWindow* window;
+public:
     std::vector<std::function<void(sf::Vector2i)>> OnPressedMouseRotate;
     std::vector<std::function<void(float)>> OnM3Rotate;
 

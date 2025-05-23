@@ -4,7 +4,6 @@
 
 #define _USE_MATH_DEFINES
 #include <math.h>
-
 class Point {
 private:
     float _x, _y, _z;
@@ -14,7 +13,6 @@ public:
     float Z() const { return _z; }
     Point(float x, float y, float z) : _x(x), _y(y), _z(z) {}
     Point() : _x(0.0f), _y(0.0f), _z(0.0f) {}
-
     friend Point operator-(const Point& a, const Point& b);
 };
 
@@ -23,14 +21,25 @@ inline Point operator-(const Point& a, const Point& b) {
 }
 
 class Camera {
+private:
+    std::unique_ptr<Point> center;
 public:
-    Point* center;
     float focalLength = 500.0f;
     float cameraDistance = 500.0f;
     float rotationX = 135.0f;
     float rotationZ = 0.0f;
 
-    Camera(Point* center) { this->center = center; }
+    explicit Camera(std::unique_ptr<Point> centerPtr)
+        : center(std::move(centerPtr)) {
+    }
+
+    Camera(const Camera&) = delete;
+    Camera& operator=(const Camera&) = delete;
+
+    Camera(Camera&&) = default;
+    Camera& operator=(Camera&&) = default;
+
+    const Point& GetCenter() const { return *center; }
 
     void CamRotate(sf::Vector2i mouseDelta) {
         float rotationSpeedZ = mouseDelta.x * 0.1f;
@@ -46,17 +55,17 @@ public:
         cameraDistance = std::min(cameraDistance, 10000.0f);
     }
 
-    Point rotatePoint(const Point& p) {
+    Point rotatePoint(const Point& p) const {
         float px = p.X() - center->X();
         float py = p.Y() - center->Y();
         float pz = p.Z() - center->Z();
 
-        float radZ = rotationZ * M_PI / 180.0f;
+        float radZ = rotationZ * static_cast<float>(M_PI) / 180.0f;
         float x1 = px * cos(radZ) - py * sin(radZ);
         float y1 = px * sin(radZ) + py * cos(radZ);
         float z1 = pz;
 
-        float radX = rotationX * M_PI / 180.0f;
+        float radX = rotationX * static_cast<float>(M_PI) / 180.0f;
         float y2 = y1 * cos(radX) - z1 * sin(radX);
         float z2 = y1 * sin(radX) + z1 * cos(radX);
         float x2 = x1;
@@ -69,20 +78,23 @@ public:
     }
 };
 
+
 class MetaScene {
     sf::Vector2f projectTo2D(const Point& point) {
         float x = point.X() * camera->focalLength / (point.Z() + camera->focalLength);
         float y = point.Y() * camera->focalLength / (point.Z() + camera->focalLength);
         return sf::Vector2f(x + screenWidth / 2.0f, y + screenHeight / 2.0f);
     }
-public:
     sf::RenderWindow* window;
     Camera* camera;
     const int screenHeight;
     const int screenWidth;
+public:
     sf::Vector2f RenderPoint(const Point& point) { return projectTo2D(camera->rotatePoint(point)); }
     MetaScene(sf::RenderWindow* window, Camera* camera, int screenHeight, int screenWidth) : screenHeight(screenHeight), screenWidth(screenWidth) {
         this->camera = camera;
         this->window = window;
     }
+    
+    friend class Scene;
 };
