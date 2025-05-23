@@ -2,10 +2,11 @@
 
 #include"geopr.h"
 
+
 class Scene {
     MetaScene* meta;
 public:
-    std::vector<Entity*> entities;
+    std::vector<View::Geometry::Entity*> entities;
     void Render() {
         for (const auto& entity : entities) {
             entity->vertices.clear();
@@ -16,7 +17,9 @@ public:
     }
     Scene(sf::RenderWindow* window, Camera* camera, int screenWidth, int screenHeight) { meta = new MetaScene(window, camera, screenWidth, screenHeight); }
     ~Scene() {
+        for (auto& el : entities) delete el;
         entities.clear();
         delete meta;
     }
 };
+

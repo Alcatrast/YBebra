@@ -6,7 +6,6 @@
 #include <functional>
 #include<iostream>
 
-
 #include"scene.h"
 #include"mouse_handler.h"
 #include"UDP_Handler.h"
@@ -31,52 +30,41 @@ bool FPGetted = false;
 
 int main() {
 
-    std::vector<Point> points = {
-       Point(0.0f, 0.0f, 0.0f),
-       // Point(50.0f, 30.0f, 150.0f),
-
-    };
+    std::vector<Point> points = { Point(0.0f, 0.0f, 0.0f) };
 
     auto center = std::make_unique<Point>(0, 0, 0);
     auto camera = std::make_unique<Camera>(std::move(center));
-    CheckredPlane* plane = new CheckredPlane(&points[0], 200, 20, sf::Color(100, 100, 100));
-    Origin* origin = new Origin(&points[0]);
-    BrokenLine* rocketTrace = new BrokenLine(points, sf::Color::White);
+    View::Geometry::CheckredPlane * plane = new View::Geometry::CheckredPlane(&points[0], 200, 20, sf::Color(100, 100, 100));
+    View::Geometry::Origin* origin = new View::Geometry::Origin(&points[0]);
+    View::Geometry::BrokenLine* rocketTrace = new View::Geometry::BrokenLine(points, sf::Color::White);
 
     int screenWidth = 1200, screenHeight = 800;
     sf::RenderWindow window(sf::VideoMode(screenWidth, screenHeight), "SFML 3D Line");
     window.setFramerateLimit(60);
     Scene scene(&window, camera.get(), screenWidth, screenHeight);
-
     scene.entities.push_back(plane);
     scene.entities.push_back(origin);
     scene.entities.push_back(rocketTrace);
 
-    // Создаем UI панель
-    UIPanel uiPanel(
+    View::UI::UIPanel uiPanel(
         sf::Vector2f(screenWidth * 2 / 3.f, 0),
-        sf::Vector2f(screenWidth * 1 / 3.f, screenHeight)
-    );
-
-    // Добавляем элементы UI
-    float verticalSpacing = 40.f; // Расстояние между элементами
-    float startY = 20.f;
+        sf::Vector2f(screenWidth * 1 / 3.f, screenHeight) );
 
     float axisX = 0.0f, axisY = 0.0f, axisZ = 0.0f;
+   
+    float verticalSpacing = 40.f;
+    float startY = 20.f;
+    uiPanel.addElement(new  View::UI::Elems::UINumberDisplay(uiPanel.getFont(), sf::Vector2f(screenWidth * 2 / 3.f + 10, startY), sf::Vector2f(screenWidth * 1 / 3.f - 20, 30), "Rotation X", &axisX));
+    uiPanel.addElement(new View::UI::Elems::UINumberDisplay(uiPanel.getFont(), sf::Vector2f(screenWidth * 2 / 3.f + 10, startY + verticalSpacing), sf::Vector2f(screenWidth * 1 / 3.f - 20, 30), "Rotation Y", &axisY));
+    uiPanel.addElement(new View::UI::Elems::UINumberDisplay(uiPanel.getFont(), sf::Vector2f(screenWidth * 2 / 3.f + 10, startY + 2 * verticalSpacing), sf::Vector2f(screenWidth * 1 / 3.f - 20, 30), "Rotation Z", &axisZ));
 
-    uiPanel.addElement(new UINumberDisplay(uiPanel.getFont(), sf::Vector2f(screenWidth * 2 / 3.f + 10, startY), sf::Vector2f(screenWidth * 1 / 3.f - 20, 30), "Rotation X", &axisX));
-    uiPanel.addElement(new UINumberDisplay(uiPanel.getFont(), sf::Vector2f(screenWidth * 2 / 3.f + 10, startY + verticalSpacing), sf::Vector2f(screenWidth * 1 / 3.f - 20, 30), "Rotation Y", &axisY));
-    uiPanel.addElement(new UINumberDisplay(uiPanel.getFont(), sf::Vector2f(screenWidth * 2 / 3.f + 10, startY + 2 * verticalSpacing), sf::Vector2f(screenWidth * 1 / 3.f - 20, 30), "Rotation Z", &axisZ));
-
-    MouseObserver observer(&window);
+    Control::MouseObserver observer(&window);
     observer.OnPressedMouseRotate.push_back([&camera](sf::Vector2i v) { camera.get()->CamRotate(v); });
     observer.OnM3Rotate.push_back([&camera](float x) { camera.get()->SetZoom(x); });
-    
-    UDPObserver udp(8151);
+    Net::UDPObserver udp(8151);
 
     while (window.isOpen()) {
         observer.RunEvents();
-
         std::string UDPinput = udp.Read();
         float* res = new float[6];
         if (TryParse(UDPinput, res)) {
